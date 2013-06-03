@@ -96,7 +96,7 @@ class DavObject(object):
             The return type must be a XML element or None
         """
         if self.collection:
-            return DAVElement.resourcetype(CollectionElement)
+            return DAVElement.resourcetype(CollectionElement, AddressbookElement)
         return None
 
     def creationdate(self):

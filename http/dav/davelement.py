@@ -19,7 +19,6 @@ from httplib import responses as http_responses
 
 DAV_NS="DAV:"     
 DAVElement = ElementMaker(namespace=DAV_NS, nsmap={'d' : DAV_NS})                  
-
 """Default DAV XML elements"""
 MultistatusElement = DAVElement.multistatus
 ResponseElement = DAVElement.response
@@ -29,6 +28,9 @@ StatusElement = DAVElement.status
 HrefElement = DAVElement.href
 CollectionElement = DAVElement.collection
 ErrorElement = DAVElement.error
+
+CARDDAV_NS="urn:ietf:params:xml:ns:carddav"
+AddressbookElement = ElementMaker(namespace=CARDDAV_NS, nsmap={'a' : CARDDAV_NS}).addressbook
 
 """Factory class for elements
 """
