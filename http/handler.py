@@ -14,7 +14,6 @@
 # under the License.
 
 from tornado import web
-from tornado import database
 
 import os
 import re
@@ -528,6 +527,8 @@ class ObjectHandler(RootHandler):
             raise web.HTTPError(response)
 
         self.set_header("Content-Type", "text/xml; charset=UTF-8")
+        import httplib
+        httplib.responses[207] = 'Multi-Status'
         self.set_status(response[0])
         self.write ( etree.tostring(MultistatusElement(*response[1]), 
                         pretty_print=True, 

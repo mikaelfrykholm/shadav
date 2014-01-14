@@ -113,16 +113,16 @@ class Lockdb(object):
     def clean(self):
         self._db.execute("""\
             DELETE FROM locks WHERE 
-            timeout IS NULL AND created + %s < UNIX_TIMESTAMP() OR 
-            timeout IS NOT NULL AND created + timeout < UNIX_TIMESTAMP();
-        """, MAX_TIMEOUT)  
+            timeout IS NULL AND created + ? < strftime('%s', 'now') OR 
+            timeout IS NOT NULL AND created + timeout < strftime('%s', 'now');
+        """, (MAX_TIMEOUT,))  
         
     def select_locks(self):
         self._locks = []
-        for row in self._db.iter("""\
+        for row in self._db.execute("""\
             SELECT id, resource, token, scope, depth, owner, created, timeout
             FROM locks WHERE 
-            timeout IS NULL OR created + timeout > %s""", get_current_time() ):
+            timeout IS NULL OR created + timeout > ?""", (get_current_time() ,)):
             self._locks.append(Lock(**row))
 
     def add_lock(self, resource, scope=1, depth=0, timeout=None, owner=None):
@@ -135,8 +135,8 @@ class Lockdb(object):
         lock_token = hashlib.sha1(resource + str(created)).hexdigest()
         rowid = self._db.execute("""\
             insert into locks (resource, token, scope, depth, created, timeout, owner)  
-            values (%s, %s, %s, %s, %s, %s, %s)
-            """, resource, lock_token, scope, depth, created, timeout, owner)
+            values (?, ?, ?, ?, ?, ?, ?)
+            """, (resource, lock_token, scope, depth, created, timeout, owner))
 
         if rowid>0:
             self.select_locks()
@@ -144,13 +144,12 @@ class Lockdb(object):
 
     def refresh_lock(self, lockid, timeout):
         created = get_current_time()  
-        self._db.execute("update locks set created = %s, timeout = %s where id = %s",
-                         created, timeout, lockid)       
+        self._db.execute("update locks set created = ?, timeout = ? where id = ?",
+                         (created, timeout, lockid))       
         self.select_locks()
 
     def remove_lock(self, lockid):
-        self._db.execute("delete from locks where id = %s",
-                         lockid)       
+        self._db.execute("delete from locks where id = ?", (lockid,))       
         self.select_locks()
 
     def all_locks(self, resource):     

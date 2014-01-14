@@ -17,13 +17,12 @@
 
 import os
 import ssl
-
+import sqlite3
 import tornado.web
 import tornado.httpserver
 import tornado.ioloop
 import tornado.options
 from tornado.options import define, options
-from tornado import database
 
 from handler import BasicHandler, RootHandler, ObjectHandler
 from auth import DigestAuth, BasicAuth, DbSqlAuth, DbFileAuth
@@ -34,10 +33,6 @@ CONFIG_FILE = 'dav-server.conf'
 
 define("port", default=8888, help="run on the given port", type=int)
 define("root", default='/tmp', help="Data root directory")
-define("mysql_host", default='localhost', help="Main application DB host")
-define("mysql_name", default='db1', help="Main application DB name")
-define("mysql_user", default='admin', help="Main application DB user")
-define("mysql_passwd", default='admin', help="Main application DB password")
 define("realm", default='davserver', help="Sever authorization realm")
 define("auth_type", default='', help="digest or basic")
 define("auth_file", default='MYSQL', help="MYSQL or authentication file name")
@@ -72,14 +67,11 @@ def run_server(conf_root=''):
     if os.path.exists(conf_file):            
         tornado.options.parse_config_file( conf_file )
     tornado.options.parse_command_line()
-
-    db = database.Connection(options.mysql_host, 
-        options.mysql_name, 
-        options.mysql_user, 
-        options.mysql_passwd)
+    dbPath = 'shadav.db'
+    db = sqlite3.connect(dbPath)
 
     usersdb = {}        
-    if options.auth_file == 'MYSQL':
+    if options.auth_file == 'DB':
         users = DbSqlAuth(options.realm, db)
         usersdb = users._usersdb
     else:

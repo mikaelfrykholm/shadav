@@ -300,11 +300,11 @@ class DbAdapter():
 
         values = []
         rowlist = []
-        for row in self._db.iter(
+        for row in self._db.execute(
             """\
             select id, uri, property_name, property_value from property 
-            where uri = %s
-            """, self._uri):
+            where uri = ?
+            """, (self._uri, )):
             p = Property(**row)
             try:
                 value = etree.fromstring( p.property_value )
@@ -331,9 +331,9 @@ class DbAdapter():
         p = self._properties[key]
         success = self._dbupdate("""\
             delete from property 
-            where id = %s
+            where id = ?
             """, 
-            p.id)
+            (p.id,))
         if success:
             del self._properties[key]    
         return success                  
@@ -342,10 +342,10 @@ class DbAdapter():
         p = self._properties[key]
         success = self._dbupdate("""\
             update property 
-            set property_value = %s 
-            where id = %s
+            set property_value = ? 
+            where id = ?
             """, 
-            val, p.id)
+            (val, p.id))
         if success>0:
             p.property_value = val
         return success
@@ -353,9 +353,9 @@ class DbAdapter():
     def insert_row (self, key, val):
         rowid = self._db.execute("""\
             insert into property (uri, property_name, property_value)  
-            values (%s, %s, %s)
+            values (?, ?, ?)
             """, 
-            self._uri, key, val)
+            (self._uri, key, val))
         if rowid>0:
             self.select_row( rowid )
         return rowid
@@ -364,8 +364,8 @@ class DbAdapter():
         row = self._db.get ("""\
             select id, uri, property_name, property_value
             from property
-            where id = %s
-            """, rowid)
+            where id = ?
+            """, (rowid,))
         p = Property(**row)
         self._properties[p.property_name] = p
         
@@ -386,10 +386,10 @@ class DbAdapter():
         """
         select_insert = """INSERT INTO property 
             (uri, property_name, property_value) 
-            SELECT REPLACE (property.uri, %s, %s), 
+            SELECT REPLACE (property.uri, ?, ?), 
                 property.property_name, 
                 property.property_value 
-            FROM property WHERE property.uri LIKE %s
+            FROM property WHERE property.uri LIKE ?
             """ 
         self.delete_properties(to_uri, like)
         success = self._dbupdate(select_insert, from_uri, to_uri, from_uri+like)
@@ -398,8 +398,8 @@ class DbAdapter():
     def move_properties (self, from_uri, to_uri, like=''):
         """ move properties to new uri """
         select = """UPDATE property 
-            SET uri = REPLACE(uri, %s, %s) 
-            WHERE uri LIKE %s
+            SET uri = REPLACE(uri, ?, ?) 
+            WHERE uri LIKE ?
             """ 
         success = self._dbupdate(select, from_uri, to_uri, from_uri+like)
         return success        
@@ -407,7 +407,7 @@ class DbAdapter():
     def delete_properties (self, uri, like=''):
         """ delete properties of uri"""
         select = """DELETE FROM property 
-            WHERE uri LIKE %s
+            WHERE uri LIKE ?
             """ 
         success = self._dbupdate(select, uri+like)
         return success        
